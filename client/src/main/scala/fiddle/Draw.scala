@@ -101,8 +101,6 @@ object Draw {
 
     import Draw._
     var startPoint = Point(dom.innerWidth.toInt/2 -500 , dom.innerHeight.toInt/2 -50 )
-    import Draw._
-    var startPoint = Point(dom.innerWidth.toInt/2 -500 , dom.innerHeight.toInt/2 -50 )
 
     def draw() = {
       renderer.clearRect(0, 0, canvas.width, canvas.height)
