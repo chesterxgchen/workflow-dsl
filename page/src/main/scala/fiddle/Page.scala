@@ -112,4 +112,5 @@ object Page{
     dom.importCssString(highlighted.css, "ace_highlight")
     highlighted.html.toString
   }
+
 }

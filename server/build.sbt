@@ -18,6 +18,7 @@ libraryDependencies ++= Seq(
   "io.spray" % "spray-caching" % "1.3.1",
   "io.spray" % "spray-httpx" % "1.3.1",
   "io.spray" % "spray-routing" % "1.3.1",
+  "io.spray" %% "spray-json" % "1.2.5",
   "org.scala-lang.modules.scalajs" %% "scalajs-compiler" % "0.4.2",
   "com.typesafe.play" %% "play-json" % "2.2.2",
   "org.scala-lang.modules.scalajs" %% "scalajs-tools" % "0.4.2",

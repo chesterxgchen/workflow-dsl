@@ -22,7 +22,7 @@ object Static{
           `type`:="text/javascript", src:=srcFile
         ),
         link(rel:="stylesheet", href:="/META-INF/resources/webjars/normalize.css/2.1.3/normalize.css"),
-        link(rel:="stylesheet", href:="/styles.css"),
+        link(rel:="stylesheet", href:="/styles.css")/*,
 
         if (analytics) script(raw(
           """
@@ -34,7 +34,7 @@ object Static{
               ga('create', 'UA-27464920-3', 'scala-js-fiddle.com');
               ga('send', 'pageview');
           """
-        )) else ()
+        )) else ()          */
 
       ),
       body(
