@@ -1,3 +1,7 @@
+This is a forked SCALA-JS-FIDDLE and hacked some server-side code to demo some workflow DSL ideas. 
+Most of the code is still Scala-js-fiddle's original code. 
+
+
 Scala-Js-Fiddle
 ==============
 
