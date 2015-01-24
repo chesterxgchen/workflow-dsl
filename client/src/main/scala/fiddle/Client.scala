@@ -142,10 +142,19 @@ class Client(){
 
 
   def evalDsl(): Unit = task*async {
+//    logln("Evaluating DSL...")
+//    val (_, output) = await(compile2(editor.code, "/evalDsl"))
+//    output.foreach( Page.println(_))
+    evalDslWithSrc(editor.code)
+  }
+
+
+  def evalDslWithSrc(src: String ): Unit = task*async {
     logln("Evaluating DSL...")
-    val (_, output) = await(compile2(editor.code, "/evalDsl"))
+    val (_, output) = await(compile2(src, "/evalDsl"))
     output.foreach( Page.println(_))
   }
+
 
   def save(): Unit = task*async{
     await(compile(editor.code, "/optimize"))
@@ -192,17 +201,17 @@ object Client{
     // val src = await(load(gistId, fileName))
 
    val src  =
-     """  /*
+     """
         @JSExport
         object ScalaJSExample{
           @JSExport
           def main(args: Array[String]): Unit = {
             println("hello")
           }
-        }*/
+        }
 
 
-       |        import scala.scalajs.js
+       | /*       import scala.scalajs.js
        |        import scala.util.{Success, Failure}
        |        import scala.concurrent.{ExecutionContext, Future, Promise}
        |        import scala.scalajs.js
@@ -287,7 +296,7 @@ object Client{
        |
        |
        |
-       |      }
+       |      }    */
        |
 
      """.stripMargin

@@ -18,7 +18,7 @@ import java.net.SocketPermission
 import spray.client.pipelining._
 
 import play.api.libs.json._
-import scala.concurrent.{Await, Future}
+import scala.concurrent._
 import scala.tools.nsc.interpreter.Completion
 import scala.reflect.internal.util.OffsetPosition
 import spray.http.HttpHeaders.`Cache-Control`
@@ -288,52 +288,135 @@ object Server extends SimpleRoutingApp {
 
     }
 
-    def runWorkflow() = {
+    def runWorkflow(url: String) = {
+/*
       val baseUrl = "http://localhost:9090"
       val workflowId="65"
-      val token="c463fdd116f720d242c1aee70daf0a2a8c9198de"
-      val url = "$baseUrl/alpinedatalabs/api/v1/json/sync/workflows/$workflowId/run?token=$token"
+      val token="1148636c8c5c53ec3ab865b5c05571e0809a4fe3"
+      val url = "http://localhost:9090/alpinedatalabs/api/v1/json/workflows/65/run?token=1148636c8c5c53ec3ab865b5c05571e0809a4fe3"
+      val url = "http://localhost:9090/alpinedatalabs/api/v1/json/processes/10faff1e-d6eb-47e9-b70f-3cea6949a97c/query?token=1148636c8c5c53ec3ab865b5c05571e0809a4fe3"
+*/
+     /*
+      val p = new ExternalDSL
+      val parsedResult = p.parse(p.source, command)
 
 
-      import ElevationJsonProtocol._
-      import SprayJsonSupport._
-      val pipeline = sendReceive ~> unmarshal[String]
-      val responseFuture = pipeline {
-        Get(url)
-      }
-
-
-      import scala.concurrent.Await
-      import scala.concurrent.duration._
-      import scala.language.postfixOps._
-
+      val p.Success(backend, qryText) = parsedResult
+      
+      println("apiUrl = " + apiUrl)
+      
+      logout.append(s"sending get request to url \n ${apiUrl}")
+*/
+      logout.append(s"trying to post  url '$url'\n")
       try {
-        val r = Await.result(responseFuture, 60 seconds)
-         output.append(r)
+        import SprayJsonSupport._
+        val pipeline = sendReceive ~> unmarshal[String]
+        val responseFuture = pipeline { Post(url.trim) }
+
+        logout.append(s"url posted \n")
+        import scala.concurrent.Await
+        import scala.concurrent.duration._
+        import scala.language.postfixOps._
+
+
+        logout.append(s"waiting for the post request to return \n")
+        val r = Await.result(responseFuture, 15 seconds)
+        logout.append(s"get something $r \n")
+        output.append(r)
+
         println("output.mkString = " + output.mkString)
+
       }
       catch {
-        case e: Exception => logout.append(s"failed to get elevation: ${e.getMessage}" )
+        case e: Exception => logout.append(s"failed to run workflow: ${e.getMessage}" )
       }
 
 
     }
 
-      val dsl = makeDSL(src)
-      if (dsl.trim.startsWith("Say")) {
-        val index: Int = dsl.indexOf("Say")
-        println("dsl = " + dsl)
-        output.append(dsl.drop(index+3).mkString)
-        Success(output.mkString)
+
+
+    def queryWorkflow(url: String) {
+      logout.append(s"trying to query workflow with url = '$url'")
+      try {
+        import SprayJsonSupport._
+        val pipeline = sendReceive ~> unmarshal[String]
+        val responseFuture = pipeline { Get(url.trim) }
+        import scala.concurrent.Await
+        import scala.concurrent.duration._
+        import scala.language.postfixOps._
+        val r = Await.result(responseFuture, 5 seconds)
+        output.append(r)
+
+        println("output.mkString = " + output.mkString)
       }
-      else if (dsl.trim.startsWith("Elevation")) {
-        processElevation()
-        println("after evaluation output = " + output.mkString)
-        Success(output.mkString)
+      catch {
+        case e: Exception => logout.append(s"failed to query workflow: ${e.getMessage}" )
+      }
+
+
+    }
+
+    val dsl = makeDSL(src)
+    println("dsl = " + dsl)
+    //do use regex with pattern match or DSL to get rid of if-else
+    if (dsl.trim.startsWith("Say")) {
+      val dslStr = extractSubString(dsl, "Say")
+      output.append(dslStr)
+      Success(output.mkString)
+    }
+    else if (dsl.trim.startsWith("Elevation")) {
+      processElevation()
+      println("after evaluation output = " + output.mkString)
+      Success(output.mkString)
+    }
+    else if (dsl.trim.startsWith("RunDSL")) {
+      val dslStr = extractSubString(dsl, "RunDSL")
+      println("dslStr = " + dslStr)
+/*
+      val p = new ExternalDSL
+      val srcResult = p.parse(p.source, dslStr)
+      val p.Success(backend, qryText) = srcResult
+      val p.Success(qry, _) = p.parse(p.query, qryText)
+
+      val f = Future {
+        backend.asInstanceOf[Queryable].execute(qry.toString)
+      }
+      Try {
+        f onSuccess {case s => output.append(s)}
+        f onFailure {case t => logout.append(s"${t.getMessage}\n") }
+      }
+*/
+
+      logout.append(" trying to run DSL\n")
+      import scala.sys.process._
+      val returnVal = s"java -jar /Users/chester/Downloads/AlpineDSL-assembly-1.0.jar $dslStr".!!
+      println("return value = " + returnVal)
+      logout.append(s" I got something $returnVal \n")
+      Try(output.append(returnVal))
+
+    }
+    else if (dsl.trim.startsWith("Workflow")) {
+      val dslStr: String = extractSubString(dsl, "Workflow")
+      if ( dslStr.startsWith("Run")) {
+        val url= extractSubString(dsl, "Run")
+        Try(runWorkflow(url))
+      }
+      else if ( dslStr.startsWith("Query")) {
+        val url= extractSubString(dsl, "Query")
+        Try(queryWorkflow(url))
       }
       else
-        Failure(new RuntimeException("unhandled dsl"))
+        Failure(new RuntimeException("unhandled workflow DSL"))
+    }
+    else
+      Failure(new RuntimeException("unhandled dsl"))
 
   }
 
+
+  def extractSubString(dsl: String, key :String ) : String = {
+    val index: Int = dsl.indexOf(key)
+    dsl.drop(index + key.length).trim
+  }
 }
